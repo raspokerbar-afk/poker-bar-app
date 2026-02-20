@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Poker Bar Point</title>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    body { font-family: Arial; padding: 20px; background:#111; color:white; }
+    .card { background:#1e1e1e; padding:20px; border-radius:10px; margin-bottom:15px; }
+    h1 { font-size:22px; }
+    button { padding:10px; width:100%; margin-top:10px; border:none; border-radius:5px; background:#00c300; color:white; font-size:16px; }
+  </style>
+</head>
+<body>
+  <h1>🎲 Poker Bar Point</h1>
+
+  <div class="card">
+    <h2 id="name">読み込み中...</h2>
+    <p>現在ポイント</p>
+    <h1 id="points">0 pt</h1>
+  </div>
+
+  <script>
+    async function main() {
+      await liff.init({ liffId: "2009179870-S4WxTDaK" });
+
+      if (!liff.isLoggedIn()) {
+        liff.login();
+        return;
+      }
+
+      const profile = await liff.getProfile();
+      document.getElementById("name").innerText = profile.displayName;
+
+      document.getElementById("points").innerText = "100 pt";
+    }
+
+    main();
+  </script>
+</body>
+</html>
