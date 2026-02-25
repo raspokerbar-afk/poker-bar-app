@@ -25,33 +25,54 @@
 
     // 🔹 初期ポイント取得
     async function loadPoints() {
-      let { data } = await supabase
+      let { data, error } = await supabase
         .from("customers")
         .select("points")
         .eq("line_id", TEST_USER_ID)
         .single();
 
+      if (error) {
+        console.log("Supabase select error:", error);
+        pointsElem.innerText = "0 pt";
+        return;
+      }
+
       if (!data) {
-        await supabase.from("customers").insert([{ line_id: TEST_USER_ID, points: 0 }]);
+        const { error: insertError } = await supabase
+          .from("customers")
+          .insert([{ line_id: TEST_USER_ID, points: 0 }]);
+        if (insertError) console.log("Supabase insert error:", insertError);
+
         pointsElem.innerText = "0 pt";
       } else {
-        pointsElem.innerText = data.points + " pt";
+        pointsElem.innerText = (data.points ?? 0) + " pt";
       }
     }
 
     // 🔹 ポイント加算
     async function addPoint() {
-      let { data } = await supabase
+      let { data, error } = await supabase
         .from("customers")
         .select("points")
         .eq("line_id", TEST_USER_ID)
         .single();
 
-      const newPoint = (data?.points || 0) + 10;
+      if (error) {
+        console.log("Supabase select error:", error);
+        return;
+      }
 
-      await supabase
+      const currentPoints = data?.points ?? 0;
+      const newPoint = currentPoints + 10;
+
+      const { error: upsertError } = await supabase
         .from("customers")
         .upsert({ line_id: TEST_USER_ID, points: newPoint });
+
+      if (upsertError) {
+        console.log("Supabase upsert error:", upsertError);
+        return;
+      }
 
       pointsElem.innerText = newPoint + " pt";
     }
