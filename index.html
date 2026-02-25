@@ -2,80 +2,63 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>Poker Bar Point</title>
+  <title>Poker Bar Point - テスト用</title>
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 </head>
 <body>
-  <h1>🎲 Poker Bar Point</h1>
+  <h1>🎲 Poker Bar Point (テスト)</h1>
   <h2 id="points">0 pt</h2>
-  <button id="addBtn" onclick="addPoint()" disabled>+10 pt</button>
+  <button id="addBtn">+10 pt</button>
 
   <script>
+    // 🔥 Supabase情報
     const supabaseUrl = "https://sqtfiadufcxdzyctrlqp.supabase.co";
-    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInJlZiI6InNxdGZpYWR1ZmN4ZHp5Y3RybHFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwNDU0OTgsImV4cCI6MjA4NzYyMTQ5OH0.P-M_0BrxNLMYhOB_mrkDqMkHZCA0bII5J8Y9fExJbJs";
-
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNxdGZpYWR1ZmN4ZHp5Y3RybHFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwNDU0OTgsImV4cCI6MjA4NzYyMTQ5OH0.P-M_0BrxNLMYhOB_mrkDqMkHZCA0bII5J8Y9fExJbJs";
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-    async function init() {
-      try {
-        await liff.init({ liffId: "2009179870-S4WxTDaK" });
+    // 🔹 テスト用ユーザーID
+    const TEST_USER_ID = "TEST_USER";
+    window.currentUserId = TEST_USER_ID;
 
-        if (!liff.isLoggedIn()) {
-          liff.login();
-          return; // ログイン画面に飛ぶので処理を止める
-        }
+    const pointsElem = document.getElementById("points");
+    const addBtn = document.getElementById("addBtn");
 
-        const profile = await liff.getProfile();
-        const userId = profile.userId;
+    // 🔹 初期ポイント取得
+    async function loadPoints() {
+      let { data } = await supabase
+        .from("customers")
+        .select("points")
+        .eq("line_id", TEST_USER_ID)
+        .single();
 
-        window.currentUserId = userId;
-
-        // Supabaseからポイント取得
-        const { data } = await supabase
-          .from("customers")
-          .select("*")
-          .eq("line_id", userId)
-          .single();
-
-        if (!data) {
-          await supabase.from("customers").insert([{ line_id: userId, points: 0 }]);
-          document.getElementById("points").innerText = "0 pt";
-        } else {
-          document.getElementById("points").innerText = data.points + " pt";
-        }
-
-        // ✅ ボタンを確実に押せる状態に
-        const addBtn = document.getElementById("addBtn");
-        addBtn.disabled = false;
-        addBtn.addEventListener("click", addPoint);
-
-      } catch (err) {
-        console.error("LIFF初期化エラー:", err);
-        alert("LIFF初期化に失敗しました。再読み込みしてください。");
+      if (!data) {
+        await supabase.from("customers").insert([{ line_id: TEST_USER_ID, points: 0 }]);
+        pointsElem.innerText = "0 pt";
+      } else {
+        pointsElem.innerText = data.points + " pt";
       }
     }
 
+    // 🔹 ポイント加算
     async function addPoint() {
-      if (!window.currentUserId) return; // 念のため
-
-      const { data } = await supabase
+      let { data } = await supabase
         .from("customers")
         .select("points")
-        .eq("line_id", window.currentUserId)
+        .eq("line_id", TEST_USER_ID)
         .single();
 
       const newPoint = (data?.points || 0) + 10;
 
       await supabase
         .from("customers")
-        .update({ points: newPoint })
-        .eq("line_id", window.currentUserId);
+        .upsert({ line_id: TEST_USER_ID, points: newPoint });
 
-      document.getElementById("points").innerText = newPoint + " pt";
+      pointsElem.innerText = newPoint + " pt";
     }
 
-    init();
+    // 🔹 初期化
+    loadPoints();
+    addBtn.addEventListener("click", addPoint);
   </script>
 </body>
 </html>
