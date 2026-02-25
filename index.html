@@ -9,21 +9,20 @@
   <h1>🎲 Poker Bar Point (テスト)</h1>
   <h2 id="points">0 pt</h2>
   <button id="addBtn">+10 pt</button>
+  <div id="log" style="color:red; margin-top:10px;"></div>
 
   <script>
-    // 🔥 Supabase情報
     const supabaseUrl = "https://sqtfiadufcxdzyctrlqp.supabase.co";
     const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNxdGZpYWR1ZmN4ZHp5Y3RybHFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwNDU0OTgsImV4cCI6MjA4NzYyMTQ5OH0.P-M_0BrxNLMYhOB_mrkDqMkHZCA0bII5J8Y9fExJbJs";
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-    // 🔹 テスト用ユーザーID
     const TEST_USER_ID = "TEST_USER";
     window.currentUserId = TEST_USER_ID;
 
     const pointsElem = document.getElementById("points");
     const addBtn = document.getElementById("addBtn");
+    const logElem = document.getElementById("log");
 
-    // 🔹 初期ポイント取得
     async function loadPoints() {
       let { data, error } = await supabase
         .from("customers")
@@ -32,7 +31,7 @@
         .single();
 
       if (error) {
-        console.log("Supabase select error:", error);
+        logElem.innerText = "select error: " + JSON.stringify(error);
         pointsElem.innerText = "0 pt";
         return;
       }
@@ -41,7 +40,7 @@
         const { error: insertError } = await supabase
           .from("customers")
           .insert([{ line_id: TEST_USER_ID, points: 0 }]);
-        if (insertError) console.log("Supabase insert error:", insertError);
+        if (insertError) logElem.innerText = "insert error: " + JSON.stringify(insertError);
 
         pointsElem.innerText = "0 pt";
       } else {
@@ -49,7 +48,6 @@
       }
     }
 
-    // 🔹 ポイント加算
     async function addPoint() {
       let { data, error } = await supabase
         .from("customers")
@@ -58,26 +56,26 @@
         .single();
 
       if (error) {
-        console.log("Supabase select error:", error);
+        logElem.innerText = "select error: " + JSON.stringify(error);
         return;
       }
 
       const currentPoints = data?.points ?? 0;
       const newPoint = currentPoints + 10;
 
-      const { error: upsertError } = await supabase
+      const { data: upsertData, error: upsertError } = await supabase
         .from("customers")
         .upsert({ line_id: TEST_USER_ID, points: newPoint });
 
       if (upsertError) {
-        console.log("Supabase upsert error:", upsertError);
+        logElem.innerText = "upsert error: " + JSON.stringify(upsertError);
         return;
       }
 
+      logElem.innerText = "ポイント更新成功: " + newPoint;
       pointsElem.innerText = newPoint + " pt";
     }
 
-    // 🔹 初期化
     loadPoints();
     addBtn.addEventListener("click", addPoint);
   </script>
