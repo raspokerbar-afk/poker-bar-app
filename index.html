@@ -3,39 +3,67 @@
 <head>
   <meta charset="UTF-8" />
   <title>Poker Bar Point</title>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <style>
-    body { font-family: Arial; padding: 20px; background:#111; color:white; }
-    .card { background:#1e1e1e; padding:20px; border-radius:10px; margin-bottom:15px; }
-    h1 { font-size:22px; }
-    button { padding:10px; width:100%; margin-top:10px; border:none; border-radius:5px; background:#00c300; color:white; font-size:16px; }
-  </style>
 </head>
 <body>
   <h1>🎲 Poker Bar Point</h1>
-
-  <div class="card">
-    <h2 id="name">読み込み中...</h2>
-    <p>現在ポイント</p>
-    <h1 id="points">0 pt</h1>
-  </div>
+  <h2 id="points">0 pt</h2>
+  <button onclick="addPoint()">+10 pt</button>
 
   <script>
-    async function main() {
+    // 🔥 ここにあなたの情報を入れる
+    const supabaseUrl = "https://sqtfiadufcxdzyctrlqp.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNxdGZpYWR1ZmN4ZHp5Y3RybHFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwNDU0OTgsImV4cCI6MjA4NzYyMTQ5OH0.P-M_0BrxNLMYhOB_mrkDqMkHZCA0bII5J8Y9fExJbJs";
+
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+    async function init() {
       await liff.init({ liffId: "2009179870-S4WxTDaK" });
 
       if (!liff.isLoggedIn()) {
         liff.login();
-        return;
       }
 
       const profile = await liff.getProfile();
-      document.getElementById("name").innerText = profile.displayName;
+      const userId = profile.userId;
 
-      document.getElementById("points").innerText = "100 pt";
+      let { data, error } = await supabase
+        .from("customers")
+        .select("*")
+        .eq("line_id", userId)
+        .single();
+
+      if (!data) {
+        await supabase.from("customers").insert([
+          { line_id: userId, points: 0 }
+        ]);
+        document.getElementById("points").innerText = "0 pt";
+      } else {
+        document.getElementById("points").innerText = data.points + " pt";
+      }
+
+      window.currentUserId = userId;
     }
 
-    main();
+    async function addPoint() {
+      let { data } = await supabase
+        .from("customers")
+        .select("points")
+        .eq("line_id", window.currentUserId)
+        .single();
+
+      const newPoint = data.points + 10;
+
+      await supabase
+        .from("customers")
+        .update({ points: newPoint })
+        .eq("line_id", window.currentUserId);
+
+      document.getElementById("points").innerText = newPoint + " pt";
+    }
+
+    init();
   </script>
 </body>
 </html>
